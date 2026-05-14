@@ -41,7 +41,7 @@
     ─────────────────────
     The sender writes a new file each day at BUSINESS_DAY_START in BUSINESS_TIMEZONE
     (default 06:00 UK, DST/BST aware) — the business-day rollover moment.
-    Between 00:00 and 02:00 only yesterday's log may exist — the script falls
+    Between 00:00 and 06:00 UKT only yesterday's log may exist — the script falls
     back to yesterday's file automatically if today's has no CYCLE lines yet.
 
 .NOTES
@@ -94,7 +94,7 @@ function Out-CMK {
 
 function Get-LogFile {
     param([string]$LogDir)
-    # Try today first, fall back to yesterday (handles 00:00–02:00 window)
+    # Try today first, fall back to yesterday (handles 00:00–06:00 UKT pre-rollover window)
     $today     = (Get-Date).ToString("yyyy-MM-dd")
     $yesterday = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
     $todayPath = Join-Path $LogDir "sender-$today.log"

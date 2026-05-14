@@ -1,0 +1,29 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Runtime artefacts (generated at runtime, not source)
+logs/
+logs_usprod/
+state/
+state_usprod/
+backups/
+backups_usprod/
+
+# OS
+.DS_Store
+Thumbs.db

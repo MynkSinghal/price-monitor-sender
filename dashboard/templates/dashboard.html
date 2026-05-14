@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="10">
+    <title>Price Monitor — DR Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <header>
+      <h1>Price Monitor — DR Dashboard</h1>
+      <div class="meta">
+        <span class="tag">MOCK RECEIVER</span>
+        <span>Payloads received: <strong>{{ count }}</strong></span>
+        <span>Auto-refresh: 10s</span>
+      </div>
+    </header>
+
+    {% if latest %}
+      <section class="card">
+        <h2>Latest payload</h2>
+        <dl class="kv">
+          <dt>Received at (UTC)</dt><dd>{{ latest.received_at }}</dd>
+          <dt>Cycle ID</dt><dd><code>{{ latest.cycle_id }}</code></dd>
+          <dt>Sender host</dt><dd>{{ latest.sender_host }} <span class="muted">({{ latest.sender_env }})</span></dd>
+          <dt>Content-Type</dt><dd>{{ latest.content_type }}</dd>
+          <dt>Bytes</dt><dd>{{ latest.bytes }}</dd>
+          <dt>Row count</dt><dd>{{ latest.rows|length }}</dd>
+        </dl>
+      </section>
+
+      <section class="card">
+        <h2>Parsed rows</h2>
+        {% if latest.rows %}
+          <table>
+            <thead><tr><th>#</th><th>Price Group</th><th>Timestamp (dd/mm/yyyy hh:mm:ss)</th><th>Composite?</th></tr></thead>
+            <tbody>
+              {% for row in latest.rows %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ row.price_group_name }}</td>
+                  <td><code>{{ row.timestamp }}</code></td>
+                  <td>{% if '/' in row.price_group_name %}<span class="badge composite">composite</span>{% else %}<span class="badge single">single</span>{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">Payload was empty — no price groups complete yet this cycle.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Raw CSV</h2>
+        <pre>{{ latest.payload }}</pre>
+      </section>
+    {% else %}
+      <section class="card empty">
+        <h2>No payload received yet</h2>
+        <p>Waiting for the sender to POST to <code>/prices</code>…</p>
+      </section>
+    {% endif %}
+
+    <footer>
+      <p><code>POST /prices</code> — receives CSV payloads</p>
+      <p><code>GET /api/latest</code> — JSON of latest payload</p>
+      <p><code>GET /api/history?limit=N</code> — JSON of last N payloads</p>
+    </footer>
+  </body>
+</html>

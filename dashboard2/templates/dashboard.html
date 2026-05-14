@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Price Monitor — Two-Site Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body
+  data-business-tz="{{ business_timezone }}"
+  data-business-start="{{ business_day_start }}"
+  data-business-anchor="{{ business_day_anchor }}"
+  data-stale-after="{{ stale_after_seconds }}"
+>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo-dot"></span>
+      <div>
+        <h1>Price Monitor <span class="brand-sub">Two-Site Dashboard</span></h1>
+        <p class="brand-meta">
+          <span class="pill pill-tz" title="Business timezone & day window">
+            {{ business_timezone }} · {{ business_day_start }} → {{ business_day_start }}
+          </span>
+          <span id="business-day-pill" class="pill pill-day">business day —</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="status-cluster">
+      <div class="live-indicator" id="live-indicator" title="Live polling status">
+        <span class="live-pulse"></span>
+        <span class="live-label">LIVE</span>
+      </div>
+      <div class="status-block">
+        <div class="status-label">Merge cycles</div>
+        <div class="status-value" id="merge-cycles">—</div>
+      </div>
+      <div class="status-block">
+        <div class="status-label">Last merge</div>
+        <div class="status-value" id="last-merged">—</div>
+      </div>
+    </div>
+  </header>
+
+  {# ── Site status cards ── #}
+  <section class="two-col">
+    <article class="card site-card" id="uk-card" data-site="uk">
+      <header class="site-head">
+        <div class="site-title">
+          <span class="site-dot dot-uk"></span>
+          <h2>UKPROD</h2>
+        </div>
+        <span class="freshness-pill" id="uk-freshness">—</span>
+      </header>
+      <dl class="kv" id="uk-kv">
+        <dt>Last received</dt><dd id="uk-received">—</dd>
+        <dt>Cycle</dt><dd><code id="uk-cycle">—</code></dd>
+        <dt>Host</dt><dd id="uk-host">—</dd>
+        <dt>Bytes</dt><dd id="uk-bytes">—</dd>
+        <dt>Rows</dt><dd>
+          <span id="uk-rows">—</span>
+          <span class="mini-counts">
+            <span class="mini ok" id="uk-complete">✓ —</span>
+            <span class="mini pending" id="uk-pending">⏳ —</span>
+          </span>
+        </dd>
+        <dt>Business day</dt><dd id="uk-bday">—</dd>
+      </dl>
+      <p class="waiting-msg" id="uk-waiting" hidden>Waiting for UKPROD to POST to <code>/prices</code>…</p>
+    </article>
+
+    <article class="card site-card" id="us-card" data-site="us">
+      <header class="site-head">
+        <div class="site-title">
+          <span class="site-dot dot-us"></span>
+          <h2>USPROD</h2>
+        </div>
+        <span class="freshness-pill" id="us-freshness">—</span>
+      </header>
+      <dl class="kv" id="us-kv">
+        <dt>Last received</dt><dd id="us-received">—</dd>
+        <dt>Cycle</dt><dd><code id="us-cycle">—</code></dd>
+        <dt>Host</dt><dd id="us-host">—</dd>
+        <dt>Bytes</dt><dd id="us-bytes">—</dd>
+        <dt>Rows</dt><dd>
+          <span id="us-rows">—</span>
+          <span class="mini-counts">
+            <span class="mini ok" id="us-complete">✓ —</span>
+            <span class="mini pending" id="us-pending">⏳ —</span>
+          </span>
+        </dd>
+        <dt>Business day</dt><dd id="us-bday">—</dd>
+      </dl>
+      <p class="waiting-msg" id="us-waiting" hidden>Waiting for USPROD to POST to <code>/prices</code>…</p>
+    </article>
+  </section>
+
+  {# ── KPI tiles + progress ── #}
+  <section class="card kpi-card">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <span class="kpi-num" id="kpi-total">—</span>
+        <span class="kpi-label">Total rows</span>
+      </div>
+      <div class="kpi kpi-uk">
+        <span class="kpi-num" id="kpi-uk">—</span>
+        <span class="kpi-label">From UKPROD</span>
+      </div>
+      <div class="kpi kpi-us">
+        <span class="kpi-num" id="kpi-us">—</span>
+        <span class="kpi-label">From USPROD</span>
+      </div>
+      <div class="kpi kpi-both">
+        <span class="kpi-num" id="kpi-both">—</span>
+        <span class="kpi-label">Both sites</span>
+      </div>
+      <div class="kpi kpi-done">
+        <span class="kpi-num" id="kpi-done">—</span>
+        <span class="kpi-label">Complete</span>
+      </div>
+      <div class="kpi kpi-pending">
+        <span class="kpi-num" id="kpi-pending">—</span>
+        <span class="kpi-label">Pending</span>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+      <span class="progress-pct" id="progress-pct">—</span>
+    </div>
+  </section>
+
+  {# ── Merged table ── #}
+  <section class="card table-card">
+    <header class="table-head">
+      <h2>Merged price groups</h2>
+      <div class="toolbar">
+        <input
+          id="filter-input"
+          type="search"
+          placeholder="Filter… (name / source / type)"
+          aria-label="Filter rows"
+          autocomplete="off"
+        >
+        <div class="chip-group" role="group" aria-label="Source filter">
+          <button class="chip active" data-source="all">All</button>
+          <button class="chip" data-source="both">Both</button>
+          <button class="chip" data-source="uk">UK</button>
+          <button class="chip" data-source="us">US</button>
+          <button class="chip" data-source="pending">Pending</button>
+        </div>
+      </div>
+    </header>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Price group</th>
+            <th>UKPROD</th>
+            <th>USPROD</th>
+            <th>Merged (winner)</th>
+            <th>Source</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody id="rows-body">
+          <tr class="row-placeholder"><td colspan="7" class="muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted row-summary" id="row-summary"></p>
+  </section>
+
+  {# ── Raw merged CSV ── #}
+  <section class="card collapsible">
+    <header class="card-head">
+      <h2>Merged CSV <span class="muted">— receiver output</span></h2>
+      <button id="copy-csv" class="btn-ghost" title="Copy to clipboard">Copy</button>
+    </header>
+    <pre id="merged-csv">—</pre>
+  </section>
+
+  <footer class="footer">
+    <div>
+      <code>POST /prices</code> — both senders post here, disambiguated by
+      <code>X-Sender-Site</code>.
+    </div>
+    <div>
+      <code>GET /api/state</code> · <code>GET /api/latest</code> ·
+      <code>GET /api/history?limit=N</code>
+    </div>
+    <div class="muted">
+      Merged backups → <code>dashboard2/backups/merged_pricecapture_backup_&lt;business-day&gt;.csv</code>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

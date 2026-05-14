@@ -1,0 +1,17 @@
+# Price Monitor Sender — Python 3.13
+# Core runtime
+watchdog==5.0.3          # ReadDirectoryChangesW-backed filesystem observer (Windows)
+requests==2.32.3         # HTTP POST transmission
+python-dotenv==1.0.1     # .env loader for deployment config
+tzdata==2024.2           # IANA TZ database for zoneinfo on Windows
+
+# Local mock receiver + DR dashboard (Linux-friendly)
+flask==3.0.3
+flask-cors==5.0.0
+
+# Coloured console output (ANSI on Mac/Linux; Windows ANSI shim on cmd/PowerShell)
+colorama>=0.4.6
+
+# Testing
+pytest==8.3.3
+freezegun==1.5.1

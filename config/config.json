@@ -1,0 +1,64 @@
+{
+  "_comment": "Non-secret runtime config. Secrets/endpoints live in .env. See config_loader.py for merge order.",
+  "transport": {
+    "protocol": "http",
+    "method": "POST",
+    "content_type": "text/csv",
+    "extra_headers": {
+      "X-Sender-Source": "RANTask-PriceMonitor"
+    }
+  },
+  "csv": {
+    "delimiter": "|",
+    "header": ["price_group_name", "timestamp"],
+    "timestamp_format": "%d/%m/%Y %H:%M:%S",
+    "emit_header": false,
+    "empty_timestamp_token": "",
+    "_comment_header": "Spec: 'price_group_name | dd/mm/yyyy hh:mm:ss' row-only (no header). Timestamps carry second precision.",
+    "_comment_empty": "Every cycle now emits ONE row per active price group (the 'full grid'). When this sender hasn't completed all jobs for a group yet (cross-site rows on the wrong host, or jobs that simply have not arrived today), the timestamp column is filled with empty_timestamp_token. Use \"\" for a literal empty value (current default), or e.g. \"pending\", \"NA\", \"-\" if the receiver wants a sentinel."
+  },
+  "monitoring": {
+    "success_filename": "success.txt",
+    "job_subfolder": "GetPricesResult",
+    "first_detection_locked": true,
+    "_comment": "Q18 locked: first detection wins; same-day re-runs do NOT overwrite the recorded timestamp."
+  },
+  "scheduler": {
+    "_comment": "All timing is anchored to timezone_business. business_day_start is the 24h cutoff (also when daily reset fires). business_day_anchor='start' means the window that opens at 06:00 on date D is labelled D; 'end' would label it D+1. Override any of these in .env (BUSINESS_TIMEZONE, BUSINESS_DAY_START, BUSINESS_DAY_ANCHOR).",
+    "timezone_business": "Europe/London",
+    "business_day_start": "06:00",
+    "business_day_anchor": "start",
+    "business_schedule": {
+      "day_window": { "start": "06:00", "end": "22:00", "interval_seconds": 600 },
+      "night_window": { "interval_seconds": 120 }
+    }
+  },
+  "backup": {
+    "filename_template": "pricecapture_backup_{site}_{date}.csv",
+    "date_format": "%Y-%m-%d",
+    "retention_days": 7,
+    "_comment": "Filenames are date-stamped and site-tagged. {site} is replaced with SENDER_SITE (UKPROD/USPROD) so both sites can write to the same collection folder without overwriting each other. {date} is the cycle date. 'today' = rewritten every cycle. Files older than retention_days are purged at daily-reset. Use the legacy template 'pricecapture_backup_{date}.csv' if you want the old behaviour."
+  },
+  "logging": {
+    "filename_pattern": "sender-%Y-%m-%d.log",
+    "retention_policy": "yesterday_only",
+    "max_bytes_per_file": 52428800,
+    "backup_count_within_day": 5
+  },
+  "sites": {
+    "usprod_jobs": [
+      "CME_SPAN2A",
+      "CME_SPAN2I",
+      "CME_SPANE",
+      "CME_SPN_AI",
+      "CME_SPN_BE",
+      "CME_SPAN2S",
+      "OCC_CPM",
+      "OCCP",
+      "OCCP_NON",
+      "OCCS",
+      "OCCSSTD"
+    ],
+    "_comment": "RANTask jobs whose success.txt files only ever appear on the USPROD (Y) host. Used purely for: (1) startup-log sanity check counting how many price groups are 'always-empty' on each site; (2) skipping pointless watcher attaches for jobs that physically do not exist on this host. Disks are NOT shared between UKPROD and USPROD, so this list is not a security filter — the OS already enforces the split."
+  }
+}

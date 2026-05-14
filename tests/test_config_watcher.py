@@ -156,19 +156,22 @@ class TestStartStop:
         f.write_text("{}")
         w = _watcher([f], interval=0.03)
 
+        exit_event = threading.Event()
         exit_codes = []
 
         def fake_exit(code):
             exit_codes.append(code)
-            raise SystemExit(code)
+            exit_event.set()
 
         with patch("src.config_watcher.os._exit", side_effect=fake_exit):
             w.start()
             time.sleep(0.01)
             f.write_text("changed")
-            time.sleep(0.5)
+            # Wait up to 3s: poll interval (0.03) + watcher pre-exit sleep (0.5) + buffer
+            triggered = exit_event.wait(timeout=3.0)
 
-        assert 0 in exit_codes
+        assert triggered, "os._exit was not called within timeout"
+        assert exit_codes[0] == 0
 
     def test_stop_while_no_change_is_clean(self, tmp_path):
         f = tmp_path / "cfg.json"
